@@ -1,42 +1,81 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity } from 'react-native';
+// Flock.js
+import React, { useEffect, useState } from 'react';
+import { View, Text, ScrollView, Image, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { Calendar, Droplet, AlertTriangle, BarChart2, Users, Clock, Wind } from 'lucide-react-native';
 import styles from '../../styles';
+import { doc, onSnapshot } from 'firebase/firestore';
+import { db, auth } from '../../firebaseConfig';
 
 const Flock = ({ route, navigation }) => {
-  const { flockId, flockName } = route.params;
-  
-  // Mock data for the selected flock
-  const flockData = {
-    id: flockId,
-    name: flockName,
-    type: 'Layer',
-    breed: 'Rhode Island Red',
-    birds: 150,
-    ageWeeks: 32,
-    location: 'Barn 2',
-    startDate: '2024-10-15',
-    healthStatus: 'Healthy',
-    lastUpdate: '2025-05-12',
-    houseTempC: 23,
-    humidity: 65,
-    feedConsumption: '18kg',
-    waterConsumption: '32L',
-    eggProduction: 138,
-    mortalityRate: '0.5%',
-    image: 'https://via.placeholder.com/150',
+  const { flockId } = route.params;
+
+  const [flockData, setFlockData] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  const formatTimestamp = (timestamp) => {
+    if (!timestamp) return '';
+    const date = timestamp.toDate();
+    return date.toLocaleString();
   };
+
+  useEffect(() => {
+    const user = auth.currentUser;
+    if (!user) {
+      console.error('User not authenticated');
+      setLoading(false);
+      return;
+    }
+
+    const docRef = doc(db, 'users', user.uid, 'batches', flockId);
+
+    // Subscribe to real-time updates
+    const unsubscribe = onSnapshot(docRef, (docSnap) => {
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        const formattedData = {
+          ...data,
+          startDate: data.createdAt ? formatTimestamp(data.createdAt) : '',
+          lastUpdate: data.lastUpdate ? formatTimestamp(data.lastUpdate) : '',
+        };
+        setFlockData({ id: flockId, ...formattedData });
+      } else {
+        console.error('No such flock!');
+        setFlockData(null);
+      }
+      setLoading(false);
+    }, (error) => {
+      console.error('Error fetching flock in realtime:', error);
+      setLoading(false);
+    });
+
+    // Cleanup subscription on unmount
+    return () => unsubscribe();
+  }, [flockId]);
+
+  if (loading) {
+    return <ActivityIndicator size="large" color="#5c6bc0" style={{ marginTop: 50 }} />;
+  }
+
+  if (!flockData) {
+    return <Text style={{ textAlign: 'center', marginTop: 50 }}>Flock not found.</Text>;
+  }
+
+  const healthColors = {
+    Healthy: '#4caf50',
+    Warning: '#ff9800',
+    Critical: '#f44336',
+  };
+  const statusColor = healthColors[flockData.healthStatus] || '#4caf50';
 
   return (
     <ScrollView style={styles.flockContainer}>
       <View style={styles.headerSection}>
-        <Image 
-          source={{ uri: flockData.image }}
-          style={styles.flockImage}
-        />
+        <Image source={{ uri: flockData.image }} style={styles.flockImage} />
         <View style={styles.flockHeaderInfo}>
           <Text style={styles.flockName}>{flockData.name}</Text>
-          <Text style={styles.flockType}>{flockData.type} • {flockData.breed}</Text>
+          <Text style={styles.flockType}>
+            {flockData.type} • {flockData.breed}
+          </Text>
           <View style={styles.statsRow}>
             <View style={styles.statItem}>
               <Users size={16} color="#5c6bc0" />
@@ -44,18 +83,18 @@ const Flock = ({ route, navigation }) => {
             </View>
             <View style={styles.statItem}>
               <Clock size={16} color="#5c6bc0" />
-              <Text style={styles.statText}>{flockData.ageWeeks} weeks</Text>
+              <Text style={styles.statText}>{flockData.age}</Text>
             </View>
           </View>
           <View style={styles.badgeContainer}>
             <View style={styles.statusBadge}>
-              <View style={styles.statusDot} />
-              <Text style={styles.statusText}>{flockData.healthStatus}</Text>
+              <View style={[styles.statusDot, { backgroundColor: statusColor }]} />
+              <Text style={styles.statusText}>{flockData.healthStatus || 'Healthy'}</Text>
             </View>
           </View>
         </View>
       </View>
-      
+
       <View style={styles.infoSection}>
         <View style={styles.infoRow}>
           <Text style={styles.infoLabel}>Location:</Text>
@@ -70,7 +109,7 @@ const Flock = ({ route, navigation }) => {
           <Text style={styles.infoValue}>{flockData.lastUpdate}</Text>
         </View>
       </View>
-      
+
       <View style={styles.environmentSection}>
         <Text style={styles.sectionTitle}>Environment</Text>
         <View style={styles.environmentCards}>
@@ -86,7 +125,7 @@ const Flock = ({ route, navigation }) => {
           </View>
         </View>
       </View>
-      
+
       <View style={styles.quickStatsSection}>
         <Text style={styles.sectionTitle}>Today's Stats</Text>
         <View style={styles.quickStatsContainer}>
@@ -108,19 +147,23 @@ const Flock = ({ route, navigation }) => {
           </View>
         </View>
       </View>
-      
+
       <View style={styles.actionSection}>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.managementButton}
-          onPress={() => navigation.navigate('FlockTabs', { 
-            flockId: flockData.id,
-            flockName: flockData.name
-          })}
+          onPress={() => navigation.navigate('FlockTabs', { flockId: flockData.id, flockName: flockData.name })}
         >
           <Text style={styles.managementButtonText}>Manage Flock</Text>
         </TouchableOpacity>
-        
+
         <View style={styles.actionButtonsRow}>
+          <TouchableOpacity
+            style={styles.managementButton}
+            onPress={() => navigation.navigate('FeedLog', { flockId: flockData.id, flockName: flockData.name })}
+          >
+            <Text style={styles.managementButtonText}>Add Feed Log</Text>
+          </TouchableOpacity>
+
           <TouchableOpacity style={styles.actionButton}>
             <Calendar size={20} color="#5c6bc0" />
             <Text style={styles.actionButtonText}>Schedule</Text>
@@ -138,6 +181,5 @@ const Flock = ({ route, navigation }) => {
     </ScrollView>
   );
 };
-
 
 export default Flock;
