@@ -1,9 +1,32 @@
+//SANIA
 // Flock.js
 import React, { useEffect, useState } from 'react';
-import { View, Text, ScrollView, Image, TouchableOpacity, ActivityIndicator } from 'react-native';
-import { Calendar, Droplet, AlertTriangle, BarChart2, Users, Clock, Wind } from 'lucide-react-native';
+import {
+  View,
+  Text,
+  ScrollView,
+  Image,
+  TouchableOpacity,
+  ActivityIndicator,
+} from 'react-native';
+import {
+  Calendar,
+  Droplet,
+  AlertTriangle,
+  BarChart2,
+  Users,
+  Clock,
+  Wind,
+} from 'lucide-react-native';
 import styles from '../../styles';
-import { doc, onSnapshot } from 'firebase/firestore';
+import {
+  doc,
+  collection,
+  onSnapshot,
+  query,
+  getDocs,
+  where,
+} from 'firebase/firestore';
 import { db, auth } from '../../firebaseConfig';
 
 const Flock = ({ route, navigation }) => {
@@ -11,7 +34,9 @@ const Flock = ({ route, navigation }) => {
 
   const [flockData, setFlockData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [totalFeed, setTotalFeed] = useState(0);
 
+  
   const formatTimestamp = (timestamp) => {
     if (!timestamp) return '';
     const date = timestamp.toDate();
@@ -28,32 +53,67 @@ const Flock = ({ route, navigation }) => {
 
     const docRef = doc(db, 'users', user.uid, 'batches', flockId);
 
-    // Subscribe to real-time updates
-    const unsubscribe = onSnapshot(docRef, (docSnap) => {
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-        const formattedData = {
-          ...data,
-          startDate: data.createdAt ? formatTimestamp(data.createdAt) : '',
-          lastUpdate: data.lastUpdate ? formatTimestamp(data.lastUpdate) : '',
-        };
-        setFlockData({ id: flockId, ...formattedData });
-      } else {
-        console.error('No such flock!');
-        setFlockData(null);
+    const unsubscribe = onSnapshot(
+      docRef,
+      (docSnap) => {
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          const formattedData = {
+            ...data,
+            startDate: data.createdAt ? formatTimestamp(data.createdAt) : '',
+            lastUpdate: data.lastUpdate ? formatTimestamp(data.lastUpdate) : '',
+          };
+          setFlockData({ id: flockId, ...formattedData });
+        } else {
+          console.error('No such flock!');
+          setFlockData(null);
+        }
+        setLoading(false);
+      },
+      (error) => {
+        console.error('Error fetching flock in realtime:', error);
+        setLoading(false);
       }
-      setLoading(false);
-    }, (error) => {
-      console.error('Error fetching flock in realtime:', error);
-      setLoading(false);
-    });
+    );
 
-    // Cleanup subscription on unmount
     return () => unsubscribe();
   }, [flockId]);
 
+  useEffect(() => {
+    const fetchFeedLogs = async () => {
+      const user = auth.currentUser;
+      if (!user) return;
+
+      const feedRef = collection(
+        db,
+        'users',
+        user.uid,
+        'batches',
+        flockId,
+        'feedLogs'
+      );
+
+      const feedQuery = query(feedRef);
+      const snapshot = await getDocs(feedQuery);
+
+      let total = 0;
+      snapshot.forEach((doc) => {
+        const data = doc.data();
+        if (data.quantity) {
+          total += Number(data.quantity);
+        }
+      });
+
+      setTotalFeed(total);
+    };
+
+    fetchFeedLogs();
+  }, [flockId]);
+
   if (loading) {
-    return <ActivityIndicator size="large" color="#5c6bc0" style={{ marginTop: 50 }} />;
+    return (
+      <ActivityIndicator size="large" color="#5c6bc0" style={{ marginTop: 50 }} />
+    );
   }
 
   if (!flockData) {
@@ -115,12 +175,16 @@ const Flock = ({ route, navigation }) => {
         <View style={styles.environmentCards}>
           <View style={styles.environmentCard}>
             <Wind size={24} color="#5c6bc0" />
-            <Text style={styles.environmentValue}>{flockData.houseTempC}°C</Text>
+            <Text style={styles.environmentValue}>
+              {flockData.houseTempC !== undefined ? `${flockData.houseTempC}°C` : 'N/A'}
+            </Text>
             <Text style={styles.environmentLabel}>Temperature</Text>
           </View>
           <View style={styles.environmentCard}>
             <Droplet size={24} color="#5c6bc0" />
-            <Text style={styles.environmentValue}>{flockData.humidity}%</Text>
+            <Text style={styles.environmentValue}>
+              {flockData.humidity !== undefined ? `${flockData.humidity}%` : 'N/A'}
+            </Text>
             <Text style={styles.environmentLabel}>Humidity</Text>
           </View>
         </View>
@@ -130,7 +194,7 @@ const Flock = ({ route, navigation }) => {
         <Text style={styles.sectionTitle}>Today's Stats</Text>
         <View style={styles.quickStatsContainer}>
           <View style={styles.quickStat}>
-            <Text style={styles.quickStatValue}>{flockData.feedConsumption}</Text>
+            <Text style={styles.quickStatValue}>{totalFeed}</Text>
             <Text style={styles.quickStatLabel}>Feed</Text>
           </View>
           <View style={styles.quickStat}>
@@ -151,30 +215,41 @@ const Flock = ({ route, navigation }) => {
       <View style={styles.actionSection}>
         <TouchableOpacity
           style={styles.managementButton}
-          onPress={() => navigation.navigate('FlockTabs', { flockId: flockData.id, flockName: flockData.name })}
+          onPress={() => navigation.navigate('ManageFlock', { flockId: flockData.id })}
         >
           <Text style={styles.managementButtonText}>Manage Flock</Text>
         </TouchableOpacity>
 
         <View style={styles.actionButtonsRow}>
           <TouchableOpacity
-            style={styles.managementButton}
-            onPress={() => navigation.navigate('FeedLog', { flockId: flockData.id, flockName: flockData.name })}
+            style={styles.actionButton}
+            onPress={() =>
+              navigation.navigate('FeedLog', {
+                flockId: flockData.id,
+                flockName: flockData.name,
+              })
+            }
           >
-            <Text style={styles.managementButtonText}>Add Feed Log</Text>
+            <Calendar size={20} color="#5c6bc0" />
+            <Text style={styles.actionButtonText}>Feed Log</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.actionButton}>
+          <TouchableOpacity style={styles.actionButton} onPress={() => {}}>
             <Calendar size={20} color="#5c6bc0" />
             <Text style={styles.actionButtonText}>Schedule</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.actionButton}>
+
+          <TouchableOpacity style={styles.actionButton} onPress={() => {}}>
             <BarChart2 size={20} color="#5c6bc0" />
             <Text style={styles.actionButtonText}>Analytics</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.actionButton}>
+
+          <TouchableOpacity
+            style={styles.actionButton}
+            onPress={() => navigation.navigate('Mortality', { flockId: flockData.id })}
+          >
             <AlertTriangle size={20} color="#5c6bc0" />
-            <Text style={styles.actionButtonText}>Report Issue</Text>
+            <Text style={styles.actionButtonText}>Mortality</Text>
           </TouchableOpacity>
         </View>
       </View>
