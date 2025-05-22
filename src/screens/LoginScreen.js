@@ -1,9 +1,11 @@
+//Sania
 // src/screens/LoginScreen.js
 import React, { useState, useEffect } from 'react';
 
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../../firebaseConfig';
+import { sendPasswordResetEmail } from 'firebase/auth';
 
 export default function LoginScreen({ navigation }) {
   const [email, setEmail] = useState('');
@@ -16,7 +18,24 @@ export default function LoginScreen({ navigation }) {
       Alert.alert('Login Error', error.message);
     }
   };
-
+  const handleForgotPassword = () => {
+    if (!email) {
+      Alert.alert('Reset Password', 'Please enter your email address first.');
+      return;
+    }
+  
+    sendPasswordResetEmail(auth, email)
+      .then(() => {
+        Alert.alert(
+          'Reset Email Sent',
+          'A password reset link has been sent to your email.'
+        );
+      })
+      .catch((error) => {
+        Alert.alert('Error', error.message);
+      });
+  };
+  
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Smart Farm Log</Text>
@@ -37,6 +56,9 @@ export default function LoginScreen({ navigation }) {
       />
       <TouchableOpacity style={styles.button} onPress={handleLogin}>
         <Text style={styles.buttonText}>Login</Text>
+      </TouchableOpacity>
+      <TouchableOpacity onPress={handleForgotPassword}>
+        <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
       </TouchableOpacity>
 
       <View style={styles.signupTextContainer}>
@@ -93,4 +115,11 @@ const styles = StyleSheet.create({
     color: '#3B82F6',
     fontWeight: 'bold',
   },
+  forgotPasswordText: {
+    color: '#3B82F6',
+    alignSelf: 'flex-end',
+    marginBottom: 10,
+    fontWeight: '500',
+  },
+  
 });

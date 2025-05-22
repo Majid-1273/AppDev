@@ -1,22 +1,23 @@
+//SANIA
 // src/screens/SignupScreen.js
-import React, { useState, useEffect } from 'react';
-
+import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { auth } from '../../firebaseConfig';
 
 export default function SignupScreen({ navigation }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
-  const handleSignup = async () => {
-    try {
-      await createUserWithEmailAndPassword(auth, email, password);
-      Alert.alert('Success', 'Account created successfully!');
-      navigation.navigate('Login');
-    } catch (error) {
-      Alert.alert('Signup Error', error.message);
+  const handleNext = () => {
+    if (!email || !password) {
+      Alert.alert('Error', 'Please enter both email and password.');
+      return;
     }
+    if (password.length < 6) {
+      Alert.alert('Error', 'Password must be at least 6 characters.');
+      return;
+    }
+    // Navigate to next screen with email & password as params
+    navigation.navigate('SignupDetails', { email, password });
   };
 
   return (
@@ -37,8 +38,8 @@ export default function SignupScreen({ navigation }) {
         value={password}
         onChangeText={setPassword}
       />
-      <TouchableOpacity style={styles.button} onPress={handleSignup}>
-        <Text style={styles.buttonText}>Sign Up</Text>
+      <TouchableOpacity style={styles.button} onPress={handleNext}>
+        <Text style={styles.buttonText}>Next</Text>
       </TouchableOpacity>
 
       <View style={styles.loginTextContainer}>
@@ -50,6 +51,8 @@ export default function SignupScreen({ navigation }) {
     </View>
   );
 }
+
+// styles (same as your current SignupScreen styles)
 
 // Styles unchanged
 

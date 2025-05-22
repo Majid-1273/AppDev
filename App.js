@@ -14,6 +14,8 @@ import FlockListScreen from './src/screens/Flocks';
 import FlockDetailsScreen from './src/screens/Flock';
 import CreateBatchScreen from './src/screens/CreateBatch';
 import FeedLogScreen from './src/screens/FeedLogScreen';
+import Mortality from './src/screens/Mortality';
+import ManageFlockScreen from './src/screens/ManageFlockScreen';
 
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth, db } from './firebaseConfig';
@@ -21,6 +23,7 @@ import { collection, onSnapshot } from 'firebase/firestore';
 
 import LoginScreen from './src/screens/LoginScreen';
 import SignupScreen from './src/screens/SignupScreen';
+import SignupDetailsScreen from './src/screens/SignupDetailsScreen';
 
 const Flocks = createStackNavigator();
 const Flock = createMaterialTopTabNavigator();
@@ -80,6 +83,16 @@ const FlocksNavigator = ({ flocks, setFlocks }) => {
           headerTintColor: '#fff',
         })}
       />
+      <Flocks.Screen 
+        name="Mortality" 
+        component={Mortality} 
+        options={{ title: 'Log Mortality' }} 
+      />
+      <Flocks.Screen 
+        name="ManageFlock" 
+        component={ManageFlockScreen} 
+        options={{ title: 'Manage Flock', headerStyle: { backgroundColor: '#5c6bc0' }, headerTintColor: '#fff' }} 
+      />
     </Flocks.Navigator>
   );
 };
@@ -123,6 +136,7 @@ export default function App() {
         <Stack.Navigator screenOptions={{ headerShown: false }}>
           <Stack.Screen name="Login" component={LoginScreen} />
           <Stack.Screen name="Signup" component={SignupScreen} />
+          <Stack.Screen name="SignupDetails" component={SignupDetailsScreen} />
         </Stack.Navigator>
       </NavigationContainer>
     );

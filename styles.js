@@ -636,6 +636,36 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     fontSize: 12,
   },
+  rowBack: {
+    flex: 1,
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    paddingRight: 10,
+    marginVertical: 5,
+    borderRadius: 8,
+    overflow: 'hidden',
+  },
+  deleteButton: {
+    width: 50,
+    backgroundColor: 'rgba(255, 69, 58, 0.9)', // soft red with transparency
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 10,
+    marginVertical: 5,
+    marginRight: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.3,
+    shadowRadius: 3,
+  },
+  
+  deleteButtonText: {
+    color: 'white',
+    fontWeight: '600',
+    fontSize: 14,
+  },
+  
+  
 });
 
 export default styles;
