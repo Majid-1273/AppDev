@@ -9,9 +9,9 @@ import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 const CreateBatch = ({ navigation }) => {
   const [batchName, setBatchName] = useState('');
   const [batchType, setBatchType] = useState('');
-  const [birdCount, setBirdCount] = useState('');
+  const [initialCount, setInitialCount] = useState('');
   const [breed, setBreed] = useState('');
-  const [location, setLocation] = useState('');
+  const [price, setPrice] = useState('');
   const [availableBreeds, setAvailableBreeds] = useState([]);
 
   const breedOptions = {
@@ -30,100 +30,144 @@ const CreateBatch = ({ navigation }) => {
     }
   };
 
-  const getCurrentDate = () => {
-    const now = new Date();
-    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-  };
-
   const handleCreateBatch = async () => {
-    if (!batchName || !batchType || !birdCount) {
-      Alert.alert('Please fill in all required fields');
+    // Validate all required fields
+    if (!batchName.trim()) {
+      Alert.alert('Validation Error', 'Please enter a batch name');
+      return;
+    }
+    
+    if (!batchType) {
+      Alert.alert('Validation Error', 'Please select a batch type');
+      return;
+    }
+    
+    if (!initialCount || parseInt(initialCount, 10) <= 0) {
+      Alert.alert('Validation Error', 'Please enter a valid number of birds');
+      return;
+    }
+
+    if (!price || parseFloat(price) <= 0) {
+      Alert.alert('Validation Error', 'Please enter a valid purchase price');
+      return;
+    }
+
+    if (!breed) {
+      Alert.alert('Validation Error', 'Please select a breed');
       return;
     }
 
     try {
       const user = auth.currentUser;
-      if (!user) throw new Error('User not authenticated');
+      if (!user) {
+        Alert.alert('Error', 'User not authenticated');
+        return;
+      }
 
       const normalizedType = batchType.trim().charAt(0).toUpperCase() + batchType.trim().slice(1).toLowerCase();
+      const birdCount = parseInt(initialCount, 10);
+      const batchPrice = parseFloat(price);
 
-      await addDoc(collection(db, 'users', user.uid, 'batches'), {
-        name: batchName,
+      // Create batch document with new structure
+      const batchData = {
+        name: batchName.trim(),
         type: normalizedType,
-        birds: parseInt(birdCount, 10),
-        breed,
-        location,
-        age: '0 weeks',
-        image: 'https://via.placeholder.com/50',
-        createdAt: serverTimestamp(),
-        startDate: getCurrentDate(),
-      });
+        initialCount: birdCount,
+        currentCount: birdCount, // Initially same as initial count
+        breed: breed,
+        price: batchPrice,
+        placementDate: serverTimestamp(), // Auto-set placement date
+        userId: user.uid, // Reference to user
+        // Optional fields for compatibility
+        image: 'https://via.placeholder.com/150',
+        healthStatus: 'Healthy',
+        lastUpdate: serverTimestamp(),
+      };
 
-      Alert.alert('Batch created successfully');
-      navigation.goBack();
+      // Add to the batches collection (not nested under users)
+      await addDoc(collection(db, 'batches'), batchData);
+
+      Alert.alert('Success', 'Batch created successfully', [
+        {
+          text: 'OK',
+          onPress: () => navigation.goBack(),
+        },
+      ]);
     } catch (error) {
-      Alert.alert('Error creating batch', error.message);
+      console.error('Error creating batch:', error);
+      Alert.alert('Error', 'Failed to create batch: ' + error.message);
     }
   };
 
   return (
     <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
+      <Text style={styles.title}>Create New Batch</Text>
+      
       <Text style={styles.label}>Batch Name *</Text>
       <TextInput
         style={styles.input}
         value={batchName}
         onChangeText={setBatchName}
         placeholder="Enter batch name"
+        maxLength={50}
       />
 
       <Text style={styles.label}>Batch Type *</Text>
       <View style={styles.pickerWrapper}>
-      <Picker
-  selectedValue={batchType}
-  onValueChange={handleBatchTypeChange}
->
-  <Picker.Item label="Select type" value="" />
-  <Picker.Item label="Layer" value="Layer" />
-  <Picker.Item label="Broiler" value="Broiler" />
-  <Picker.Item label="Other" value="Other" />
-</Picker>
-
+        <Picker
+          selectedValue={batchType}
+          onValueChange={handleBatchTypeChange}
+        >
+          <Picker.Item label="Select type" value="" />
+          <Picker.Item label="Layer" value="Layer" />
+          <Picker.Item label="Broiler" value="Broiler" />
+          <Picker.Item label="Other" value="Other" />
+        </Picker>
       </View>
 
-      <Text style={styles.label}>Number of Birds *</Text>
+      <Text style={styles.label}>Initial Number of Birds *</Text>
       <TextInput
         style={styles.input}
-        value={birdCount}
-        onChangeText={setBirdCount}
-        placeholder="Enter number of birds"
+        value={initialCount}
+        onChangeText={setInitialCount}
+        placeholder="Enter initial number of birds"
+        keyboardType="numeric"
+        maxLength={6}
+      />
+
+      <Text style={styles.label}>Purchase Price *</Text>
+      <TextInput
+        style={styles.input}
+        value={price}
+        onChangeText={setPrice}
+        placeholder="Enter total purchase price"
         keyboardType="numeric"
       />
 
-      <Text style={styles.label}>Breed</Text>
+      <Text style={styles.label}>Breed *</Text>
       <View style={styles.pickerWrapper}>
         <Picker
           selectedValue={breed}
           onValueChange={(itemValue) => setBreed(itemValue)}
           enabled={availableBreeds.length > 0}
         >
-          <Picker.Item label="Select breed (optional)" value="" />
+          <Picker.Item label="Select breed" value="" />
           {availableBreeds.map((breedOption) => (
             <Picker.Item key={breedOption} label={breedOption} value={breedOption} />
           ))}
         </Picker>
       </View>
 
-
-      <Text style={styles.label}>Location</Text>
-      <TextInput
-        style={styles.input}
-        value={location}
-        onChangeText={setLocation}
-        placeholder="Enter location (optional)"
-      />
-
       <View style={styles.buttonContainer}>
-        <Button title="Create Batch" onPress={handleCreateBatch} />
+        <Button title="Create Batch" onPress={handleCreateBatch} color="#5c6bc0" />
+      </View>
+      
+      <View style={styles.buttonContainer}>
+        <Button 
+          title="Cancel" 
+          onPress={() => navigation.goBack()} 
+          color="#666"
+        />
       </View>
     </ScrollView>
   );
@@ -135,26 +179,39 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     backgroundColor: '#fff',
   },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 20,
+    textAlign: 'center',
+  },
   label: {
     marginTop: 15,
     fontWeight: '600',
     color: '#333',
+    fontSize: 16,
   },
   input: {
     borderWidth: 1,
     borderColor: '#bbb',
-    padding: 10,
-    borderRadius: 6,
+    padding: 12,
+    borderRadius: 8,
     marginTop: 5,
+    fontSize: 16,
+    backgroundColor: '#fafafa',
   },
   pickerWrapper: {
     borderWidth: 1,
     borderColor: '#bbb',
-    borderRadius: 6,
+    borderRadius: 8,
     marginTop: 5,
+    backgroundColor: '#fafafa',
   },
   buttonContainer: {
-    marginTop: 30,
+    marginTop: 15,
+    borderRadius: 8,
+    overflow: 'hidden',
   },
 });
 

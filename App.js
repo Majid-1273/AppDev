@@ -10,27 +10,26 @@ import Chatbot from './src/screens/Chatbot';
 import VetLocator from './src/screens/VetLocator';
 import Reports from './src/screens/Reports';
 import ProfileScreen from './src/screens/ProfileScreen';
-import FlockListScreen from './src/screens/Flocks';
-import FlockDetailsScreen from './src/screens/Flock';
+import BatchListScreen from './src/screens/Batches';
+import BatchDetailsScreen from './src/screens/Batch';
 import CreateBatchScreen from './src/screens/CreateBatch';
-import FeedLogScreen from './src/screens/FeedLogScreen';
+import Feed from './src/screens/Feed';
 import Mortality from './src/screens/Mortality';
-import ManageFlockScreen from './src/screens/ManageFlockScreen';
+import ManageBatchScreen from './src/screens/ManageBatchScreen';
 
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth, db } from './firebaseConfig';
-import { collection, onSnapshot } from 'firebase/firestore';
+import { collection, onSnapshot, query, where } from 'firebase/firestore';
 
 import LoginScreen from './src/screens/LoginScreen';
 import SignupScreen from './src/screens/SignupScreen';
-import SignupDetailsScreen from './src/screens/SignupDetailsScreen';
 
-const Flocks = createStackNavigator();
-const Flock = createMaterialTopTabNavigator();
+const Batches = createStackNavigator();
+const Batch = createMaterialTopTabNavigator();
 
-const FlockDetailsTabNavigator = () => {
+const BatchDetailsTabNavigator = () => {
   return (
-    <Flock.Navigator
+    <Batch.Navigator
       screenOptions={{
         tabBarActiveTintColor: '#5c6bc0',
         tabBarInactiveTintColor: 'gray',
@@ -39,61 +38,61 @@ const FlockDetailsTabNavigator = () => {
       }}
     >
       {/* Placeholder tabs */}
-    </Flock.Navigator>
+    </Batch.Navigator>
   );
 };
 
-const FlocksNavigator = ({ flocks, setFlocks }) => {
+const BatchesNavigator = ({ batches, setBatches }) => {
   return (
-    <Flocks.Navigator>
-      <Flocks.Screen
-        name="FlockList"
-        children={(props) => <FlockListScreen {...props} flocks={flocks} setFlocks={setFlocks} />}
+    <Batches.Navigator>
+      <Batches.Screen
+        name="BatchList"
+        children={(props) => <BatchListScreen {...props} batches={batches} setBatches={setBatches} />}
         options={{ headerShown: false }}
       />
-      <Flocks.Screen
-        name="FlockDetails"
-        component={FlockDetailsScreen}
+      <Batches.Screen
+        name="BatchDetails"
+        component={BatchDetailsScreen}
         options={({ route }) => ({
-          title: route.params?.flockName || 'Flock Details',
+          title: route.params?.batchName || 'Batch Details',
           headerStyle: { backgroundColor: '#5c6bc0' },
           headerTintColor: '#fff',
         })}
       />
-      <Flocks.Screen 
+      <Batches.Screen 
         name="FeedLog" 
-        component={FeedLogScreen} 
+        component={Feed} 
         options={{ title: 'Feed Logs' }} 
       />
-      <Flocks.Screen
+      <Batches.Screen
         name="CreateBatch"
-        children={(props) => <CreateBatchScreen {...props} flocks={flocks} setFlocks={setFlocks} />}
+        children={(props) => <CreateBatchScreen {...props} batches={batches} setBatches={setBatches} />}
         options={{
           title: 'Create New Batch',
           headerStyle: { backgroundColor: '#5c6bc0' },
           headerTintColor: '#fff',
         }}
       />
-      <Flocks.Screen
-        name="FlockTabs"
-        component={FlockDetailsTabNavigator}
+      <Batches.Screen
+        name="BatchTabs"
+        component={BatchDetailsTabNavigator}
         options={({ route }) => ({
-          title: route.params?.flockName || 'Flock Management',
+          title: route.params?.batchName || 'Batch Management',
           headerStyle: { backgroundColor: '#5c6bc0' },
           headerTintColor: '#fff',
         })}
       />
-      <Flocks.Screen 
+      <Batches.Screen 
         name="Mortality" 
         component={Mortality} 
         options={{ title: 'Log Mortality' }} 
       />
-      <Flocks.Screen 
-        name="ManageFlock" 
-        component={ManageFlockScreen} 
-        options={{ title: 'Manage Flock', headerStyle: { backgroundColor: '#5c6bc0' }, headerTintColor: '#fff' }} 
+      <Batches.Screen 
+        name="ManageBatch" 
+        component={ManageBatchScreen} 
+        options={{ title: 'Manage Batch', headerStyle: { backgroundColor: '#5c6bc0' }, headerTintColor: '#fff' }} 
       />
-    </Flocks.Navigator>
+    </Batches.Navigator>
   );
 };
 
@@ -101,27 +100,31 @@ const Tab = createBottomTabNavigator();
 
 export default function App() {
   const [user, setUser] = useState(null);
-  const [flocks, setFlocks] = useState([]);
+  const [batches, setBatches] = useState([]);
 
   useEffect(() => {
     const unsubscribeAuth = onAuthStateChanged(auth, (authenticatedUser) => {
       if (authenticatedUser) {
         setUser(authenticatedUser);
 
-        const flocksRef = collection(db, 'users', authenticatedUser.uid, 'batches');
+        // Updated: Query the top-level 'batches' collection filtered by userId
+        const batchesQuery = query(
+          collection(db, 'batches'),
+          where('userId', '==', authenticatedUser.uid)
+        );
 
-        const unsubscribeFlocks = onSnapshot(flocksRef, (snapshot) => {
-          const fetchedFlocks = snapshot.docs.map(doc => ({
+        const unsubscribeBatches = onSnapshot(batchesQuery, (snapshot) => {
+          const fetchedBatches = snapshot.docs.map(doc => ({
             id: doc.id,
             ...doc.data(),
           }));
-          setFlocks(fetchedFlocks);
+          setBatches(fetchedBatches);
         });
 
-        return () => unsubscribeFlocks(); // Clean up flocks listener
+        return () => unsubscribeBatches(); // Clean up batches listener
       } else {
         setUser(null);
-        setFlocks([]);
+        setBatches([]);
       }
     });
 
@@ -136,7 +139,6 @@ export default function App() {
         <Stack.Navigator screenOptions={{ headerShown: false }}>
           <Stack.Screen name="Login" component={LoginScreen} />
           <Stack.Screen name="Signup" component={SignupScreen} />
-          <Stack.Screen name="SignupDetails" component={SignupDetailsScreen} />
         </Stack.Navigator>
       </NavigationContainer>
     );
@@ -147,7 +149,7 @@ export default function App() {
       <Tab.Navigator
         screenOptions={({ route }) => ({
           tabBarIcon: ({ color, size }) => {
-            if (route.name === 'Flock') return <Users size={size} color={color} />;
+            if (route.name === 'Batch') return <Users size={size} color={color} />;
             if (route.name === 'Chatbot') return <MessageCircle size={size} color={color} />;
             if (route.name === 'VetLocator') return <MapPin size={size} color={color} />;
             if (route.name === 'Reports') return <FileText size={size} color={color} />;
@@ -159,8 +161,8 @@ export default function App() {
           headerShown: false,
         })}
       >
-        <Tab.Screen name="Flock">
-          {(props) => <FlocksNavigator {...props} flocks={flocks} setFlocks={setFlocks} />}
+        <Tab.Screen name="Batch">
+          {(props) => <BatchesNavigator {...props} batches={batches} setBatches={setBatches} />}
         </Tab.Screen>
         <Tab.Screen name="Chatbot" component={Chatbot} />
         <Tab.Screen name="VetLocator" component={VetLocator} />

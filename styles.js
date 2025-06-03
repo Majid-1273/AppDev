@@ -74,14 +74,14 @@ const styles = StyleSheet.create({
     borderBottomColor: '#eee',
   },
   
-  // Flock Screen styles
+  // Batch Screen styles
   searchBar: {
     backgroundColor: '#fff',
     padding: 12,
     borderRadius: 8,
     marginBottom: 16,
   },
-  flockItem: {
+  batchItem: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#fff',
@@ -89,11 +89,11 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     marginBottom: 10,
   },
-  flockDetails: {
+  batchDetails: {
     color: '#666',
     fontSize: 14,
   },
-  flockDistance: {
+  batchDistance: {
     color: '#888',
     fontSize: 12,
   },
@@ -318,8 +318,8 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: 'bold',
   },
-//  Flocks Screen Styles
-   flocksContainer: {
+//  Batches Screen Styles
+   batchesContainer: {
     flex: 1,
     padding: 16,
     backgroundColor: '#f5f5f5',
@@ -372,10 +372,10 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: 'bold',
   },
-  flockList: {
+  batchList: {
     flex: 1,
   },
-  flockItem: {
+  batchItem: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#fff',
@@ -388,26 +388,26 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
     elevation: 1,
   },
-  flocksImage: {
+  batchesImage: {
     width: 60,
     height: 60,
     borderRadius: 8,
     marginRight: 12,
   },
-  flockInfo: {
+  batchInfo: {
     flex: 1,
   },
-  flocksName: {
+  batchesName: {
     fontWeight: 'bold',
     fontSize: 16,
     marginBottom: 2,
   },
-  flockDetails: {
+  batchDetails: {
     color: '#666',
     fontSize: 14,
     marginBottom: 2,
   },
-  flockAge: {
+  batchAge: {
     color: '#888',
     fontSize: 13,
   },
@@ -448,8 +448,8 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 16,
   },
-// Flock Screen Styles
-   flockContainer: {
+// Batch Screen Styles
+   batchContainer: {
     flex: 1,
     backgroundColor: '#f5f5f5',
   },
@@ -460,22 +460,22 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#eee',
   },
-  flockImage: {
+  batchImage: {
     width: 100,
     height: 100,
     borderRadius: 8,
     marginRight: 16,
   },
-  flockHeaderInfo: {
+  batchHeaderInfo: {
     flex: 1,
     justifyContent: 'center',
   },
-  flockName: {
+  batchName: {
     fontSize: 20,
     fontWeight: 'bold',
     marginBottom: 4,
   },
-  flockType: {
+  batchType: {
     color: '#666',
     fontSize: 14,
     marginBottom: 8,
