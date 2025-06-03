@@ -1,28 +1,59 @@
-//SANIA
-// src/screens/SignupScreen.js
+// SANIA - Single Screen Signup
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  Alert,
+} from 'react-native';
+import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { auth, db } from '../../firebaseConfig';
+import { doc, setDoc } from 'firebase/firestore';
 
 export default function SignupScreen({ navigation }) {
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
-  const handleNext = () => {
-    if (!email || !password) {
-      Alert.alert('Error', 'Please enter both email and password.');
+  const handleSignup = async () => {
+    if (!name || !email || !password) {
+      Alert.alert('Error', 'Please fill in all fields.');
       return;
     }
+
     if (password.length < 6) {
       Alert.alert('Error', 'Password must be at least 6 characters.');
       return;
     }
-    // Navigate to next screen with email & password as params
-    navigation.navigate('SignupDetails', { email, password });
+
+    try {
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const uid = userCredential.user.uid;
+
+      await setDoc(doc(db, 'users', uid), {
+        name,
+        email,
+      });
+
+      Alert.alert('Success', 'Account created successfully!');
+      navigation.navigate('Login');
+    } catch (error) {
+      Alert.alert('Signup Error', error.message);
+    }
   };
 
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Create Account</Text>
+
+      <TextInput
+        style={styles.input}
+        placeholder="Full Name"
+        value={name}
+        onChangeText={setName}
+      />
       <TextInput
         style={styles.input}
         placeholder="Email"
@@ -38,8 +69,9 @@ export default function SignupScreen({ navigation }) {
         value={password}
         onChangeText={setPassword}
       />
-      <TouchableOpacity style={styles.button} onPress={handleNext}>
-        <Text style={styles.buttonText}>Next</Text>
+
+      <TouchableOpacity style={styles.button} onPress={handleSignup}>
+        <Text style={styles.buttonText}>Sign Up</Text>
       </TouchableOpacity>
 
       <View style={styles.loginTextContainer}>
@@ -51,11 +83,6 @@ export default function SignupScreen({ navigation }) {
     </View>
   );
 }
-
-// styles (same as your current SignupScreen styles)
-
-// Styles unchanged
-
 
 const styles = StyleSheet.create({
   container: {
