@@ -15,6 +15,8 @@ import BatchDetailsScreen from './src/screens/Batch';
 import CreateBatchScreen from './src/screens/CreateBatch';
 import Feed from './src/screens/Feed';
 import Mortality from './src/screens/Mortality';
+import Vaccination from './src/screens/Vaccination';
+import EggProduction from './src/screens/EggProduction';
 import ManageBatchScreen from './src/screens/ManageBatchScreen';
 
 import { onAuthStateChanged } from 'firebase/auth';
@@ -62,7 +64,38 @@ const BatchesNavigator = ({ batches, setBatches }) => {
       <Batches.Screen 
         name="FeedLog" 
         component={Feed} 
-        options={{ title: 'Feed Logs' }} 
+        options={{ 
+          title: 'Feed Logs',
+          headerStyle: { backgroundColor: '#5c6bc0' },
+          headerTintColor: '#fff'
+        }} 
+      />
+      <Batches.Screen 
+        name="Mortality" 
+        component={Mortality} 
+        options={{ 
+          title: 'Mortality Log',
+          headerStyle: { backgroundColor: '#5c6bc0' },
+          headerTintColor: '#fff'
+        }} 
+      />
+      <Batches.Screen 
+        name="VaccinationSchedule" 
+        component={Vaccination} 
+        options={{ 
+          title: 'Vaccination Records',
+          headerStyle: { backgroundColor: '#5c6bc0' },
+          headerTintColor: '#fff'
+        }} 
+      />
+      <Batches.Screen 
+        name="EggProductionLog" 
+        component={EggProduction} 
+        options={{ 
+          title: 'Egg Production',
+          headerStyle: { backgroundColor: '#5c6bc0' },
+          headerTintColor: '#fff'
+        }} 
       />
       <Batches.Screen
         name="CreateBatch"
@@ -83,14 +116,13 @@ const BatchesNavigator = ({ batches, setBatches }) => {
         })}
       />
       <Batches.Screen 
-        name="Mortality" 
-        component={Mortality} 
-        options={{ title: 'Log Mortality' }} 
-      />
-      <Batches.Screen 
         name="ManageBatch" 
         component={ManageBatchScreen} 
-        options={{ title: 'Manage Batch', headerStyle: { backgroundColor: '#5c6bc0' }, headerTintColor: '#fff' }} 
+        options={{ 
+          title: 'Manage Batch', 
+          headerStyle: { backgroundColor: '#5c6bc0' }, 
+          headerTintColor: '#fff' 
+        }} 
       />
     </Batches.Navigator>
   );
@@ -107,7 +139,7 @@ export default function App() {
       if (authenticatedUser) {
         setUser(authenticatedUser);
 
-        // Updated: Query the top-level 'batches' collection filtered by userId
+        // Query the top-level 'batches' collection filtered by userId
         const batchesQuery = query(
           collection(db, 'batches'),
           where('userId', '==', authenticatedUser.uid)

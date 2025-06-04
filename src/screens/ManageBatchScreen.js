@@ -201,36 +201,6 @@ const ManageBatchScreen = ({ route, navigation }) => {
       <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
         <Text style={styles.saveButtonText}>Save Changes</Text>
       </TouchableOpacity>
-
-      <View style={styles.navigationContainer}>
-        <TouchableOpacity 
-          style={styles.navButton}
-          onPress={() => navigation.navigate('Feed', { batchId })}
-        >
-          <Text style={styles.navButtonText}>Manage Feed</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity 
-          style={styles.navButton}
-          onPress={() => navigation.navigate('Mortality', { batchId })}
-        >
-          <Text style={styles.navButtonText}>Manage Mortality</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity 
-          style={styles.navButton}
-          onPress={() => navigation.navigate('EggProduction', { batchId })}
-        >
-          <Text style={styles.navButtonText}>Egg Production</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity 
-          style={styles.navButton}
-          onPress={() => navigation.navigate('Vaccination', { batchId })}
-        >
-          <Text style={styles.navButtonText}>Vaccination</Text>
-        </TouchableOpacity>
-      </View>
     </ScrollView>
   );
 };
@@ -313,25 +283,5 @@ const styles = StyleSheet.create({
     color: 'white',
     fontWeight: '700',
     fontSize: 18,
-  },
-  navigationContainer: {
-    marginTop: 30,
-    borderTopWidth: 2,
-    borderTopColor: '#eee',
-    paddingTop: 20,
-  },
-  navButton: {
-    backgroundColor: '#f8f9fa',
-    borderWidth: 1,
-    borderColor: '#5c6bc0',
-    paddingVertical: 12,
-    borderRadius: 6,
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  navButtonText: {
-    color: '#5c6bc0',
-    fontWeight: '600',
-    fontSize: 16,
   },
 });
