@@ -22,6 +22,7 @@ import {
   deleteDoc,
   serverTimestamp,
   orderBy,
+  getDoc,
 } from 'firebase/firestore';
 
 const EggProduction = ({ route, navigation }) => {
@@ -31,10 +32,12 @@ const EggProduction = ({ route, navigation }) => {
   const [loading, setLoading] = useState(false);
   const [eggProductions, setEggProductions] = useState([]);
   const [editingId, setEditingId] = useState(null);
+  const [batchData, setBatchData] = useState(null);
 
   // Form states
   const [broken, setBroken] = useState('');
   const [total, setTotal] = useState('');
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]); // YYYY-MM-DD format
 
   // Calculate remaining eggs automatically
   const calculateRemaining = () => {
@@ -52,6 +55,20 @@ const EggProduction = ({ route, navigation }) => {
       return;
     }
 
+    // Fetch batch data to get placement date for validation
+    const fetchBatchData = async () => {
+      try {
+        const batchDoc = await getDoc(doc(db, 'batches', batchId));
+        if (batchDoc.exists()) {
+          setBatchData(batchDoc.data());
+        }
+      } catch (error) {
+        console.error('Error fetching batch data:', error);
+      }
+    };
+
+    fetchBatchData();
+
     // Query egg-production collection filtered by batchId
     const eggProductionQuery = query(
       collection(db, 'egg-production'),
@@ -63,12 +80,12 @@ const EggProduction = ({ route, navigation }) => {
         id: doc.id,
         ...doc.data(),
       }));
-        // Sort in JavaScript instead of Firestore
-  fetchedEggProductions.sort((a, b) => {
-    if (!a.createdAt) return 1;
-    if (!b.createdAt) return -1;
-    return b.createdAt.seconds - a.createdAt.seconds;
-  });
+      // Sort in JavaScript instead of Firestore
+      fetchedEggProductions.sort((a, b) => {
+        if (!a.createdAt) return 1;
+        if (!b.createdAt) return -1;
+        return b.createdAt.seconds - a.createdAt.seconds;
+      });
       setEggProductions(fetchedEggProductions);
     });
 
@@ -94,57 +111,114 @@ const EggProduction = ({ route, navigation }) => {
       return false;
     }
 
+    // Date validation
+    const today = new Date();
+    const inputDate = new Date(selectedDate);
+    
+    // Check if date is in the past (before today)
+    const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const inputDateStart = new Date(inputDate.getFullYear(), inputDate.getMonth(), inputDate.getDate());
+    
+    if (inputDateStart < todayStart) {
+      Alert.alert('Validation Error', 'Date cannot be in the past');
+      return false;
+    }
+
+    // Check if date is before batch placement date
+    if (batchData && batchData.placementDate) {
+      const placementDate = new Date(batchData.placementDate.seconds * 1000);
+      const placementDateStart = new Date(placementDate.getFullYear(), placementDate.getMonth(), placementDate.getDate());
+      
+      if (inputDateStart < placementDateStart) {
+        Alert.alert('Validation Error', 'Date cannot be before batch placement date');
+        return false;
+      }
+    }
+
+    // Check for duplicate date (only for new entries or when editing and date is changed)
+    const duplicateDate = eggProductions.find(item => {
+      if (editingId && item.id === editingId) {
+        // When editing, allow same date only if it's the same record
+        return false;
+      }
+      
+      if (item.date && item.date.seconds) {
+        const existingDate = new Date(item.date.seconds * 1000);
+        const existingDateStart = new Date(existingDate.getFullYear(), existingDate.getMonth(), existingDate.getDate());
+        return existingDateStart.getTime() === inputDateStart.getTime();
+      }
+      return false;
+    });
+
+    if (duplicateDate) {
+      Alert.alert('Validation Error', 'An entry for this date already exists');
+      return false;
+    }
+
     return true;
   };
 
-const handleSubmit = async () => {
-  if (!validateForm()) return;
+  const handleSubmit = async () => {
+    if (!validateForm()) return;
 
-  try {
-    setLoading(true);
+    try {
+      setLoading(true);
 
-    if (editingId) {
-      // Update existing record - only include fields that should be updated
-      const updateData = {
-        batchId,
-        broken: Number(broken),
-        remaining: remaining,
-        total: Number(total),
-        updatedAt: serverTimestamp(),
-      };
+      // Convert date to timestamp
+      const dateTimestamp = new Date(selectedDate);
 
-      await updateDoc(doc(db, 'egg-production', editingId), updateData);
-      Alert.alert('Success', 'Egg production record updated successfully');
-      setEditingId(null);
-    } else {
-      // Add new record - include createdAt for new records only
-      const eggProductionData = {
-        batchId,
-        broken: Number(broken),
-        remaining: remaining,
-        total: Number(total),
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-      };
+      if (editingId) {
+        // Update existing record
+        const updateData = {
+          batchId,
+          broken: Number(broken),
+          remaining: remaining,
+          total: Number(total),
+          date: dateTimestamp,
+          updatedAt: serverTimestamp(),
+        };
 
-      await addDoc(collection(db, 'egg-production'), eggProductionData);
-      Alert.alert('Success', 'Egg production record added successfully');
+        await updateDoc(doc(db, 'egg-production', editingId), updateData);
+        Alert.alert('Success', 'Egg production record updated successfully');
+        setEditingId(null);
+      } else {
+        // Add new record
+        const eggProductionData = {
+          batchId,
+          broken: Number(broken),
+          remaining: remaining,
+          total: Number(total),
+          date: dateTimestamp,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        };
+
+        await addDoc(collection(db, 'egg-production'), eggProductionData);
+        Alert.alert('Success', 'Egg production record added successfully');
+      }
+
+      // Reset form
+      setBroken('');
+      setTotal('');
+      setSelectedDate(new Date().toISOString().split('T')[0]);
+    } catch (error) {
+      console.error('Error saving egg production:', error);
+      Alert.alert('Error', 'Failed to save egg production record');
+    } finally {
+      setLoading(false);
     }
-
-    // Reset form
-    setBroken('');
-    setTotal('');
-  } catch (error) {
-    console.error('Error saving egg production:', error);
-    Alert.alert('Error', 'Failed to save egg production record');
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
   const handleEdit = (item) => {
     setTotal(String(item.total));
     setBroken(String(item.broken));
+    
+    // Set the date for editing
+    if (item.date && item.date.seconds) {
+      const date = new Date(item.date.seconds * 1000);
+      setSelectedDate(date.toISOString().split('T')[0]);
+    }
+    
     setEditingId(item.id);
   };
 
@@ -174,14 +248,20 @@ const handleSubmit = async () => {
   const handleCancel = () => {
     setBroken('');
     setTotal('');
+    setSelectedDate(new Date().toISOString().split('T')[0]);
     setEditingId(null);
+  };
+
+  const formatDate = (timestamp) => {
+    if (!timestamp || !timestamp.seconds) return 'Today';
+    return new Date(timestamp.seconds * 1000).toLocaleDateString();
   };
 
   const renderEggProductionItem = ({ item }) => (
     <View style={styles.recordItem}>
       <View style={styles.recordHeader}>
         <Text style={styles.recordDate}>
-          {item.createdAt ? new Date(item.createdAt.seconds * 1000).toLocaleDateString() : 'Today'}
+          {formatDate(item.date)}
         </Text>
         <View style={styles.recordActions}>
           <TouchableOpacity style={styles.editButton} onPress={() => handleEdit(item)}>
@@ -216,6 +296,14 @@ const handleSubmit = async () => {
         <Text style={styles.title}>
           {editingId ? 'Edit Egg Production' : 'Add Egg Production'}
         </Text>
+
+        <Text style={styles.label}>Date *</Text>
+        <TextInput
+          style={styles.input}
+          value={selectedDate}
+          onChangeText={setSelectedDate}
+          placeholder="YYYY-MM-DD"
+        />
 
         <Text style={styles.label}>Total Eggs *</Text>
         <TextInput
