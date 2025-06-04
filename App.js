@@ -16,6 +16,8 @@ import CreateBatchScreen from './src/screens/CreateBatch';
 import Feed from './src/screens/Feed';
 import Mortality from './src/screens/Mortality';
 import ManageBatchScreen from './src/screens/ManageBatchScreen';
+import EggProduction from './src/screens/EggProduction';
+import Vaccination from './src/screens/Vaccination';
 
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth, db } from './firebaseConfig';
@@ -62,7 +64,11 @@ const BatchesNavigator = ({ batches, setBatches }) => {
       <Batches.Screen 
         name="FeedLog" 
         component={Feed} 
-        options={{ title: 'Feed Logs' }} 
+        options={{ 
+          title: 'Feed Logs',
+          headerStyle: { backgroundColor: '#5c6bc0' },
+          headerTintColor: '#fff',
+        }} 
       />
       <Batches.Screen
         name="CreateBatch"
@@ -85,12 +91,38 @@ const BatchesNavigator = ({ batches, setBatches }) => {
       <Batches.Screen 
         name="Mortality" 
         component={Mortality} 
-        options={{ title: 'Log Mortality' }} 
+        options={{ 
+          title: 'Log Mortality',
+          headerStyle: { backgroundColor: '#5c6bc0' },
+          headerTintColor: '#fff',
+        }} 
       />
       <Batches.Screen 
         name="ManageBatch" 
         component={ManageBatchScreen} 
-        options={{ title: 'Manage Batch', headerStyle: { backgroundColor: '#5c6bc0' }, headerTintColor: '#fff' }} 
+        options={{ 
+          title: 'Manage Batch', 
+          headerStyle: { backgroundColor: '#5c6bc0' }, 
+          headerTintColor: '#fff' 
+        }} 
+      />
+      <Batches.Screen 
+        name="EggProduction" 
+        component={EggProduction} 
+        options={{ 
+          title: 'Egg Production',
+          headerStyle: { backgroundColor: '#5c6bc0' },
+          headerTintColor: '#fff',
+        }} 
+      />
+      <Batches.Screen 
+        name="Vaccination" 
+        component={Vaccination} 
+        options={{ 
+          title: 'Vaccination Records',
+          headerStyle: { backgroundColor: '#5c6bc0' },
+          headerTintColor: '#fff',
+        }} 
       />
     </Batches.Navigator>
   );
