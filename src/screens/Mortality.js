@@ -7,13 +7,13 @@ import {
   View,
   Text,
   TextInput,
-  Button,
   FlatList,
   StyleSheet,
   Alert,
   TouchableOpacity,
   Modal,
   ActivityIndicator,
+  ScrollView,
 } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Picker } from '@react-native-picker/picker';
@@ -223,13 +223,26 @@ const Mortality = ({ route, navigation }) => {
   };
 
   const handleDeleteMortality = async (id) => {
-    try {
-      const docRef = doc(db, 'mortality', id);
-      await deleteDoc(docRef);
-      Alert.alert('Success', 'Mortality log deleted');
-    } catch (error) {
-      Alert.alert('Error', 'Error deleting mortality log: ' + error.message);
-    }
+    Alert.alert(
+      'Confirm Delete',
+      'Are you sure you want to delete this mortality log?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              const docRef = doc(db, 'mortality', id);
+              await deleteDoc(docRef);
+              Alert.alert('Success', 'Mortality log deleted');
+            } catch (error) {
+              Alert.alert('Error', 'Error deleting mortality log: ' + error.message);
+            }
+          },
+        },
+      ]
+    );
   };
 
   const handleEditMortality = (log) => {
@@ -239,6 +252,7 @@ const Mortality = ({ route, navigation }) => {
     setRemaining(log.remaining.toString());
     setSelectedDate(log.date);
     setEditModalVisible(true);
+    setShowMenuId(null); // Close menu when editing
   };
 
   const saveEditedLog = async () => {
@@ -269,6 +283,8 @@ const Mortality = ({ route, navigation }) => {
       return;
     }
 
+    setLoading(true);
+
     try {
       const docRef = doc(db, 'mortality', editingLog.id);
       await updateDoc(docRef, {
@@ -288,32 +304,62 @@ const Mortality = ({ route, navigation }) => {
       Alert.alert('Success', 'Mortality log updated successfully');
     } catch (error) {
       Alert.alert('Error', 'Error updating log: ' + error.message);
+    } finally {
+      setLoading(false);
     }
   };
 
+  const handleCancel = () => {
+    setEditModalVisible(false);
+    setEditingLog(null);
+    setDeaths('');
+    setCauseOfDeath('');
+    setRemaining('');
+    setSelectedDate(new Date());
+  };
+
   const renderMortalityLog = ({ item }) => (
-    <View style={styles.logItem}>
-      <View style={{ flex: 1 }}>
-        <Text style={styles.logText}>Date: {item.date.toISOString().split('T')[0]}</Text>
-        <Text style={styles.logText}>Deaths: {item.deaths}</Text>
-        <Text style={styles.logText}>Cause: {item.causeOfDeath || 'Not specified'}</Text>
-        <Text style={styles.logText}>Remaining: {item.remaining}</Text>
+    <View style={styles.recordItem}>
+      <View style={styles.recordHeader}>
+        <Text style={styles.recordDate}>
+          {item.date.toISOString().split('T')[0]}
+        </Text>
+        <TouchableOpacity
+          onPress={() => setShowMenuId(showMenuId === item.id ? null : item.id)}
+          style={styles.menuButton}
+        >
+          <MaterialIcons name="more-vert" size={24} color="#5c6bc0" />
+        </TouchableOpacity>
       </View>
 
-      <TouchableOpacity
-        onPress={() => setShowMenuId(showMenuId === item.id ? null : item.id)}
-        style={{ padding: 5 }}
-      >
-        <MaterialIcons name="more-vert" size={24} color="black" />
-      </TouchableOpacity>
+      <View style={styles.recordDetails}>
+        <View style={styles.detailRow}>
+          <Text style={styles.detailLabel}>Deaths:</Text>
+          <Text style={styles.detailValue}>{item.deaths}</Text>
+        </View>
+        <View style={styles.detailRow}>
+          <Text style={styles.detailLabel}>Cause:</Text>
+          <Text style={styles.detailValue}>{item.causeOfDeath || 'Not specified'}</Text>
+        </View>
+        <View style={styles.detailRow}>
+          <Text style={styles.detailLabel}>Remaining:</Text>
+          <Text style={styles.detailValue}>{item.remaining}</Text>
+        </View>
+      </View>
 
       {showMenuId === item.id && (
         <View style={styles.popupMenu}>
-          <TouchableOpacity onPress={() => handleEditMortality(item)}>
-            <Text style={styles.popupItem}>Edit</Text>
+          <TouchableOpacity 
+            onPress={() => handleEditMortality(item)}
+            style={styles.editButton}
+          >
+            <Text style={styles.editButtonText}>Edit</Text>
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => handleDeleteMortality(item.id)}>
-            <Text style={[styles.popupItem, { color: 'red' }]}>Delete</Text>
+          <TouchableOpacity 
+            onPress={() => handleDeleteMortality(item.id)}
+            style={styles.deleteButton}
+          >
+            <Text style={styles.deleteButtonText}>Delete</Text>
           </TouchableOpacity>
         </View>
       )}
@@ -321,20 +367,28 @@ const Mortality = ({ route, navigation }) => {
   );
 
   if (loading) {
-    return <ActivityIndicator size="large" color="#5c6bc0" style={{ marginTop: 50 }} />;
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#5c6bc0" />
+      </View>
+    );
   }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Add Mortality Log</Text>
-      <Text style={styles.subtitle}>Current Batch Count: {currentBatchCount}</Text>
+    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+      {/* Form Section */}
+      <View style={styles.formContainer}>
+        <Text style={styles.title}>
+          {editingLog ? 'Edit Mortality Log' : 'Add Mortality Log'}
+        </Text>
+        <Text style={styles.subtitle}>Current Batch Count: {currentBatchCount}</Text>
 
-      <View style={styles.dateInputContainer}>
+        <Text style={styles.label}>Mortality Date *</Text>
         <TouchableOpacity
           onPress={() => setShowDatePicker(true)}
-          style={styles.dateInputTouchable}
+          style={styles.dateButton}
         >
-          <Text style={styles.dateText}>
+          <Text style={styles.dateButtonText}>
             {selectedDate.toISOString().split('T')[0]}
           </Text>
           <FontAwesome name="calendar" size={20} color="#666" />
@@ -354,101 +408,141 @@ const Mortality = ({ route, navigation }) => {
             }}
           />
         )}
+
+        <Text style={styles.label}>Number of Deaths *</Text>
+        <TextInput 
+          style={styles.input} 
+          placeholder="Enter number of deaths" 
+          value={deaths} 
+          onChangeText={handleDeathsChange} 
+          keyboardType="numeric" 
+        />
+
+        <Text style={styles.label}>Cause of Death *</Text>
+        <View style={styles.pickerContainer}>
+          <Picker
+            selectedValue={causeOfDeath}
+            onValueChange={(itemValue) => setCauseOfDeath(itemValue)}
+            style={styles.picker}
+          >
+            <Picker.Item label="Select cause of death..." value="" />
+            {causeOfDeathOptions.map((cause, index) => (
+              <Picker.Item key={index} label={cause} value={cause} />
+            ))}
+          </Picker>
+        </View>
+
+        <Text style={styles.label}>Remaining Birds</Text>
+        <TextInput 
+          style={[styles.input, styles.disabledInput]} 
+          placeholder="Remaining birds (auto-calculated)" 
+          value={remaining} 
+          editable={false}
+        />
+
+        <View style={styles.buttonContainer}>
+          <TouchableOpacity
+            style={[styles.submitButton, loading && styles.disabledButton]}
+            onPress={handleAddMortality}
+            disabled={loading}
+          >
+            {loading ? (
+              <ActivityIndicator color="white" size="small" />
+            ) : (
+              <Text style={styles.submitButtonText}>Add Mortality Log</Text>
+            )}
+          </TouchableOpacity>
+        </View>
       </View>
 
-      <TextInput 
-        style={styles.input} 
-        placeholder="Number of Deaths" 
-        value={deaths} 
-        onChangeText={handleDeathsChange} 
-        keyboardType="numeric" 
-      />
-
-      <View style={styles.pickerContainer}>
-        <Picker
-          selectedValue={causeOfDeath}
-          onValueChange={(itemValue) => setCauseOfDeath(itemValue)}
-          style={styles.picker}
-        >
-          <Picker.Item label="Select Cause of Death" value="" />
-          {causeOfDeathOptions.map((cause, index) => (
-            <Picker.Item key={index} label={cause} value={cause} />
-          ))}
-        </Picker>
+      {/* Records Section */}
+      <View style={styles.recordsContainer}>
+        <Text style={styles.recordsTitle}>Mortality Logs</Text>
+        {mortalityLogs.length === 0 ? (
+          <Text style={styles.emptyText}>No mortality logs found</Text>
+        ) : (
+          <FlatList 
+            data={mortalityLogs} 
+            keyExtractor={(item) => item.id} 
+            renderItem={renderMortalityLog}
+            scrollEnabled={false}
+          />
+        )}
       </View>
 
-      <TextInput 
-        style={[styles.input, styles.disabledInput]} 
-        placeholder="Remaining Birds (Auto-calculated)" 
-        value={remaining} 
-        editable={false}
-      />
-
-      <Button 
-        title={editingLog ? 'Save Changes' : 'Add Mortality Log'} 
-        onPress={editingLog ? saveEditedLog : handleAddMortality} 
-      />
-
-      <Text style={styles.title}>Mortality Logs</Text>
-      <FlatList 
-        data={mortalityLogs} 
-        keyExtractor={(item) => item.id} 
-        renderItem={renderMortalityLog} 
-        ListEmptyComponent={<Text>No mortality logs yet.</Text>} 
-      />
-
+      {/* Edit Modal */}
       <Modal visible={editModalVisible} animationType="slide" transparent={true}>
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
-            <Text style={styles.title}>Edit Mortality Log</Text>
+            <Text style={styles.modalTitle}>Edit Mortality Log</Text>
 
-            <View style={styles.dateInputContainer}>
-              <TouchableOpacity
-                onPress={() => setShowDatePicker(true)}
-                style={styles.dateInputTouchable}
-              >
-                <Text style={styles.dateText}>
-                  {selectedDate.toISOString().split('T')[0]}
-                </Text>
-                <FontAwesome name="calendar" size={20} color="#666" />
-              </TouchableOpacity>
-            </View>
+            <Text style={styles.label}>Mortality Date *</Text>
+            <TouchableOpacity
+              onPress={() => setShowDatePicker(true)}
+              style={styles.dateButton}
+            >
+              <Text style={styles.dateButtonText}>
+                {selectedDate.toISOString().split('T')[0]}
+              </Text>
+              <FontAwesome name="calendar" size={20} color="#666" />
+            </TouchableOpacity>
             
+            <Text style={styles.label}>Number of Deaths *</Text>
             <TextInput 
               style={styles.input} 
-              placeholder="Number of Deaths"
+              placeholder="Enter number of deaths"
               value={deaths} 
               onChangeText={setDeaths} 
               keyboardType="numeric" 
             />
 
+            <Text style={styles.label}>Cause of Death *</Text>
             <View style={styles.pickerContainer}>
               <Picker
                 selectedValue={causeOfDeath}
                 onValueChange={(itemValue) => setCauseOfDeath(itemValue)}
                 style={styles.picker}
               >
-                <Picker.Item label="Select Cause of Death" value="" />
+                <Picker.Item label="Select cause of death..." value="" />
                 {causeOfDeathOptions.map((cause, index) => (
                   <Picker.Item key={index} label={cause} value={cause} />
                 ))}
               </Picker>
             </View>
 
+            <Text style={styles.label}>Remaining Birds</Text>
             <TextInput 
               style={styles.input} 
-              placeholder="Remaining Birds"
+              placeholder="Enter remaining birds"
               value={remaining} 
               onChangeText={setRemaining} 
               keyboardType="numeric" 
             />
 
-            <Button title="Save" onPress={saveEditedLog} />
-            <Button title="Cancel" onPress={() => setEditModalVisible(false)} color="gray" />
+            <View style={styles.modalButtonContainer}>
+              <TouchableOpacity
+                style={[styles.submitButton, loading && styles.disabledButton]}
+                onPress={saveEditedLog}
+                disabled={loading}
+              >
+                {loading ? (
+                  <ActivityIndicator color="white" size="small" />
+                ) : (
+                  <Text style={styles.submitButtonText}>Update Log</Text>
+                )}
+              </TouchableOpacity>
+              
+              <TouchableOpacity 
+                style={styles.cancelButton} 
+                onPress={handleCancel}
+              >
+                <Text style={styles.cancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       </Modal>
-    </View>
+    </ScrollView>
   );
 };
 
@@ -456,52 +550,176 @@ export default Mortality;
 
 const styles = StyleSheet.create({
   container: {
-    padding: 20,
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#f8f9fa',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#f8f9fa',
+  },
+  formContainer: {
+    padding: 20,
+    backgroundColor: 'white',
+    marginBottom: 10,
   },
   title: {
-    fontSize: 22,
+    fontSize: 24,
     fontWeight: 'bold',
-    marginVertical: 10,
+    marginBottom: 10,
+    textAlign: 'center',
+    color: '#5c6bc0',
   },
   subtitle: {
     fontSize: 16,
     color: '#666',
-    marginBottom: 15,
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  label: {
+    fontWeight: '600',
+    marginBottom: 6,
+    marginTop: 12,
+    fontSize: 16,
+    color: '#333',
   },
   input: {
-    borderColor: '#ccc',
     borderWidth: 1,
+    borderColor: '#5c6bc0',
+    borderRadius: 6,
     paddingHorizontal: 12,
     paddingVertical: 8,
-    marginBottom: 10,
-    borderRadius: 5,
+    fontSize: 16,
+    backgroundColor: '#fff',
   },
   disabledInput: {
     backgroundColor: '#f5f5f5',
     color: '#666',
   },
-  pickerContainer: {
-    borderColor: '#ccc',
+  dateButton: {
     borderWidth: 1,
-    borderRadius: 5,
-    marginBottom: 10,
+    borderColor: '#5c6bc0',
+    borderRadius: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    backgroundColor: '#fff',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  dateButtonText: {
+    fontSize: 16,
+    color: '#333',
+  },
+  pickerContainer: {
+    borderWidth: 1,
+    borderColor: '#5c6bc0',
+    borderRadius: 6,
+    backgroundColor: '#fff',
   },
   picker: {
     height: 50,
   },
-  logItem: {
-    backgroundColor: '#f1f1f1',
-    padding: 15,
-    borderRadius: 5,
-    marginVertical: 5,
-    flexDirection: 'row',
+  buttonContainer: {
+    marginTop: 20,
+  },
+  submitButton: {
+    backgroundColor: '#5c6bc0',
+    paddingVertical: 14,
+    borderRadius: 6,
     alignItems: 'center',
+    marginBottom: 10,
+  },
+  disabledButton: {
+    opacity: 0.6,
+  },
+  submitButtonText: {
+    color: 'white',
+    fontWeight: '700',
+    fontSize: 16,
+  },
+  cancelButton: {
+    backgroundColor: '#dc3545',
+    paddingVertical: 14,
+    borderRadius: 6,
+    alignItems: 'center',
+  },
+  cancelButtonText: {
+    color: 'white',
+    fontWeight: '700',
+    fontSize: 16,
+  },
+  recordsContainer: {
+    padding: 20,
+    paddingTop: 10,
+    backgroundColor: 'white',
+    marginTop: 10,
+  },
+  recordsTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 15,
+    color: '#5c6bc0',
+  },
+  emptyText: {
+    textAlign: 'center',
+    color: '#666',
+    fontSize: 16,
+    fontStyle: 'italic',
+    marginTop: 20,
+  },
+  recordItem: {
+    backgroundColor: '#f8f9fa',
+    borderRadius: 8,
+    padding: 15,
+    marginBottom: 12,
+    borderLeftWidth: 4,
+    borderLeftColor: '#5c6bc0',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.22,
+    shadowRadius: 2.22,
     position: 'relative',
   },
-  logText: {
-    fontSize: 16,
+  recordHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  recordDate: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#5c6bc0',
+  },
+  menuButton: {
+    padding: 5,
+  },
+  recordDetails: {
+    gap: 8,
+  },
+  detailRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 4,
+  },
+  detailLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#666',
+    flex: 1,
+  },
+  detailValue: {
+    fontSize: 14,
+    color: '#333',
+    flex: 2,
+    textAlign: 'right',
   },
   popupMenu: {
     position: 'absolute',
@@ -514,16 +732,37 @@ const styles = StyleSheet.create({
     zIndex: 1,
     elevation: 5,
     padding: 5,
+    minWidth: 100,
   },
-  popupItem: {
+  editButton: {
+    backgroundColor: '#28a745',
+    paddingHorizontal: 12,
     paddingVertical: 8,
-    paddingHorizontal: 10,
-    fontSize: 16,
+    borderRadius: 4,
+    marginBottom: 5,
+  },
+  editButtonText: {
+    color: 'white',
+    fontSize: 14,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  deleteButton: {
+    backgroundColor: '#dc3545',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 4,
+  },
+  deleteButtonText: {
+    color: 'white',
+    fontSize: 14,
+    fontWeight: '600',
+    textAlign: 'center',
   },
   modalContainer: {
     flex: 1,
     justifyContent: 'center',
-    backgroundColor: 'rgba(0,0,0,0.3)',
+    backgroundColor: 'rgba(0,0,0,0.5)',
   },
   modalContent: {
     backgroundColor: 'white',
@@ -531,23 +770,17 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     padding: 20,
     elevation: 5,
+    maxHeight: '80%',
   },
-  dateInputContainer: {
-    position: 'relative',
-    marginBottom: 10,
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 20,
+    textAlign: 'center',
+    color: '#5c6bc0',
   },
-  dateInputTouchable: {
-    borderColor: '#ccc',
-    borderWidth: 1,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    borderRadius: 5,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  dateText: {
-    fontSize: 16,
-    color: '#333',
+  modalButtonContainer: {
+    marginTop: 20,
+    gap: 10,
   },
 });
