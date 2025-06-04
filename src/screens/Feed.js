@@ -238,18 +238,24 @@ export default function Feed({ route }) {
 
       <TouchableOpacity
         onPress={() => setShowMenuId(showMenuId === item.id ? null : item.id)}
-        style={{ padding: 5 }}
+        style={styles.menuButton}
       >
-        <MaterialIcons name="more-vert" size={24} color="black" />
+        <MaterialIcons name="more-vert" size={24} color="#5c6bc0" />
       </TouchableOpacity>
 
       {showMenuId === item.id && (
         <View style={styles.popupMenu}>
-          <TouchableOpacity onPress={() => handleEditFeedLog(item)}>
-            <Text style={styles.popupItem}>Edit</Text>
+          <TouchableOpacity 
+            onPress={() => handleEditFeedLog(item)}
+            style={styles.editButton}
+          >
+            <Text style={styles.editButtonText}>Edit</Text>
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => handleDeleteFeedLog(item.id)}>
-            <Text style={[styles.popupItem, { color: 'red' }]}>Delete</Text>
+          <TouchableOpacity 
+            onPress={() => handleDeleteFeedLog(item.id)}
+            style={styles.deleteButton}
+          >
+            <Text style={styles.deleteButtonText}>Delete</Text>
           </TouchableOpacity>
         </View>
       )}
@@ -258,83 +264,95 @@ export default function Feed({ route }) {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Add Feed Log</Text>
+      <View style={styles.formContainer}>
+        <Text style={styles.title}>Add Feed Log</Text>
 
-      <TextInput 
-        style={styles.input} 
-        placeholder="Feed Type" 
-        value={feedType} 
-        onChangeText={setFeedType} 
-      />
-      
-      <View style={styles.dateInputContainer}>
-        <TouchableOpacity
-          onPress={() => setShowDatePicker(true)}
-          style={styles.dateInputTouchable}
+        <Text style={styles.label}>Feed Type *</Text>
+        <TextInput 
+          style={styles.input} 
+          placeholder="Enter feed type" 
+          value={feedType} 
+          onChangeText={setFeedType} 
+        />
+        
+        <Text style={styles.label}>Date *</Text>
+        <View style={styles.dateInputContainer}>
+          <TouchableOpacity
+            onPress={() => setShowDatePicker(true)}
+            style={styles.dateInputTouchable}
+          >
+            <Text style={styles.dateText}>
+              {selectedDate.toISOString().split('T')[0]}
+            </Text>
+            <FontAwesome name="calendar" size={20} color="#5c6bc0" />
+          </TouchableOpacity>
+
+          {showDatePicker && (
+            <DateTimePicker
+              value={selectedDate}
+              mode="date"
+              display="default"
+              minimumDate={new Date()} // Prevent past dates
+              onChange={(event, date) => {
+                setShowDatePicker(false);
+                if (event.type === 'set' && date) {
+                  setSelectedDate(date);
+                }
+              }}
+            />
+          )}
+        </View>
+
+        <Text style={styles.label}>Grams *</Text>
+        <TextInput 
+          style={styles.input} 
+          placeholder="Enter grams" 
+          value={grams} 
+          onChangeText={setGrams} 
+          keyboardType="numeric" 
+        />
+
+        <Text style={styles.label}>Price *</Text>
+        <TextInput 
+          style={styles.input} 
+          placeholder="Enter price" 
+          value={price} 
+          onChangeText={setPrice} 
+          keyboardType="numeric" 
+        />
+
+        <TouchableOpacity 
+          style={styles.submitButton}
+          onPress={handleAddFeedLog}
         >
-          <Text style={styles.dateText}>
-            {selectedDate.toISOString().split('T')[0]}
-          </Text>
-          <FontAwesome name="calendar" size={20} color="#666" />
+          <Text style={styles.submitButtonText}>Add Feed Log</Text>
         </TouchableOpacity>
-
-        {showDatePicker && (
-          <DateTimePicker
-            value={selectedDate}
-            mode="date"
-            display="default"
-            minimumDate={new Date()} // Prevent past dates
-            onChange={(event, date) => {
-              setShowDatePicker(false);
-              if (event.type === 'set' && date) {
-                setSelectedDate(date);
-              }
-            }}
-          />
-        )}
       </View>
 
-      <TextInput 
-        style={styles.input} 
-        placeholder="Grams" 
-        value={grams} 
-        onChangeText={setGrams} 
-        keyboardType="numeric" 
-      />
-
-      <TextInput 
-        style={styles.input} 
-        placeholder="Price" 
-        value={price} 
-        onChangeText={setPrice} 
-        keyboardType="numeric" 
-      />
-
-      <Button 
-        title={editingLog ? 'Save Changes' : 'Add Feed Log'} 
-        onPress={editingLog ? saveEditedLog : handleAddFeedLog} 
-      />
-
-      <Text style={styles.title}>Feed Logs</Text>
-      <FlatList 
-        data={feedLogs} 
-        keyExtractor={(item) => item.id} 
-        renderItem={renderFeedLog} 
-        ListEmptyComponent={<Text>No feed logs yet.</Text>} 
-      />
+      <View style={styles.recordsContainer}>
+        <Text style={styles.recordsTitle}>Feed Logs</Text>
+        <FlatList 
+          data={feedLogs} 
+          keyExtractor={(item) => item.id} 
+          renderItem={renderFeedLog} 
+          ListEmptyComponent={<Text style={styles.emptyText}>No feed logs yet.</Text>} 
+        />
+      </View>
 
       <Modal visible={editModalVisible} animationType="slide" transparent={true}>
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
             <Text style={styles.title}>Edit Feed Log</Text>
 
+            <Text style={styles.label}>Feed Type *</Text>
             <TextInput 
               style={styles.input} 
-              placeholder="Feed Type"
+              placeholder="Enter feed type"
               value={feedType} 
               onChangeText={setFeedType} 
             />
             
+            <Text style={styles.label}>Date *</Text>
             <View style={styles.dateInputContainer}>
               <TouchableOpacity
                 onPress={() => setShowDatePicker(true)}
@@ -343,28 +361,41 @@ export default function Feed({ route }) {
                 <Text style={styles.dateText}>
                   {selectedDate.toISOString().split('T')[0]}
                 </Text>
-                <FontAwesome name="calendar" size={20} color="#666" />
+                <FontAwesome name="calendar" size={20} color="#5c6bc0" />
               </TouchableOpacity>
             </View>
             
+            <Text style={styles.label}>Grams *</Text>
             <TextInput 
               style={styles.input} 
-              placeholder="Grams"
+              placeholder="Enter grams"
               value={grams} 
               onChangeText={setGrams} 
               keyboardType="numeric" 
             />
 
+            <Text style={styles.label}>Price *</Text>
             <TextInput 
               style={styles.input} 
-              placeholder="Price"
+              placeholder="Enter price"
               value={price} 
               onChangeText={setPrice} 
               keyboardType="numeric" 
             />
 
-            <Button title="Save" onPress={saveEditedLog} />
-            <Button title="Cancel" onPress={() => setEditModalVisible(false)} color="gray" />
+            <TouchableOpacity 
+              style={styles.submitButton}
+              onPress={saveEditedLog}
+            >
+              <Text style={styles.submitButtonText}>Save Changes</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              style={styles.cancelButton}
+              onPress={() => setEditModalVisible(false)}
+            >
+              <Text style={styles.cancelButtonText}>Cancel</Text>
+            </TouchableOpacity>
           </View>
         </View>
       </Modal>
@@ -374,34 +405,124 @@ export default function Feed({ route }) {
 
 const styles = StyleSheet.create({
   container: {
-    padding: 20,
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#f8f9fa',
+  },
+  formContainer: {
+    padding: 20,
+    backgroundColor: 'white',
+    marginBottom: 10,
   },
   title: {
-    fontSize: 22,
+    fontSize: 24,
     fontWeight: 'bold',
-    marginVertical: 10,
+    marginBottom: 20,
+    textAlign: 'center',
+    color: '#5c6bc0',
+  },
+  label: {
+    fontWeight: '600',
+    marginBottom: 6,
+    marginTop: 12,
+    fontSize: 16,
+    color: '#333',
   },
   input: {
-    borderColor: '#ccc',
     borderWidth: 1,
+    borderColor: '#5c6bc0',
+    borderRadius: 6,
     paddingHorizontal: 12,
     paddingVertical: 8,
-    marginBottom: 10,
-    borderRadius: 5,
+    fontSize: 16,
+    backgroundColor: '#fff',
+  },
+  dateInputContainer: {
+    position: 'relative',
+  },
+  dateInputTouchable: {
+    borderColor: '#5c6bc0',
+    borderWidth: 1,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 6,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#fff',
+  },
+  dateText: {
+    fontSize: 16,
+    color: '#333',
+  },
+  submitButton: {
+    backgroundColor: '#5c6bc0',
+    paddingVertical: 14,
+    borderRadius: 6,
+    alignItems: 'center',
+    marginTop: 20,
+  },
+  submitButtonText: {
+    color: 'white',
+    fontWeight: '700',
+    fontSize: 16,
+  },
+  cancelButton: {
+    backgroundColor: '#dc3545',
+    paddingVertical: 14,
+    borderRadius: 6,
+    alignItems: 'center',
+    marginTop: 10,
+  },
+  cancelButtonText: {
+    color: 'white',
+    fontWeight: '700',
+    fontSize: 16,
+  },
+  recordsContainer: {
+    padding: 20,
+    paddingTop: 10,
+    backgroundColor: 'white',
+    marginTop: 10,
+  },
+  recordsTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 15,
+    color: '#5c6bc0',
+  },
+  emptyText: {
+    textAlign: 'center',
+    color: '#666',
+    fontSize: 16,
+    fontStyle: 'italic',
+    marginTop: 20,
   },
   feedLogItem: {
-    backgroundColor: '#f1f1f1',
+    backgroundColor: '#f8f9fa',
+    borderRadius: 8,
     padding: 15,
-    borderRadius: 5,
-    marginVertical: 5,
+    marginBottom: 12,
+    borderLeftWidth: 4,
+    borderLeftColor: '#5c6bc0',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.22,
+    shadowRadius: 2.22,
     flexDirection: 'row',
     alignItems: 'center',
     position: 'relative',
   },
   feedLogText: {
     fontSize: 16,
+    color: '#333',
+    marginBottom: 4,
+  },
+  menuButton: {
+    padding: 5,
   },
   popupMenu: {
     position: 'absolute',
@@ -409,21 +530,48 @@ const styles = StyleSheet.create({
     right: 10,
     backgroundColor: 'white',
     borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 5,
+    borderColor: '#ddd',
+    borderRadius: 8,
     zIndex: 1,
     elevation: 5,
-    padding: 5,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
   },
-  popupItem: {
-    paddingVertical: 8,
-    paddingHorizontal: 10,
-    fontSize: 16,
+  editButton: {
+    backgroundColor: '#28a745',
+    paddingHorizontal: 15,
+    paddingVertical: 10,
+    borderTopLeftRadius: 8,
+    borderTopRightRadius: 8,
+  },
+  editButtonText: {
+    color: 'white',
+    fontSize: 14,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  deleteButton: {
+    backgroundColor: '#dc3545',
+    paddingHorizontal: 15,
+    paddingVertical: 10,
+    borderBottomLeftRadius: 8,
+    borderBottomRightRadius: 8,
+  },
+  deleteButtonText: {
+    color: 'white',
+    fontSize: 14,
+    fontWeight: '600',
+    textAlign: 'center',
   },
   modalContainer: {
     flex: 1,
     justifyContent: 'center',
-    backgroundColor: 'rgba(0,0,0,0.3)',
+    backgroundColor: 'rgba(0,0,0,0.5)',
   },
   modalContent: {
     backgroundColor: 'white',
@@ -431,26 +579,12 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     padding: 20,
     elevation: 5,
-  },
-  dateInputContainer: {
-    position: 'relative',
-    marginBottom: 10,
-  },
-  dateInputTouchable: {
-    borderColor: '#ccc',
-    borderWidth: 1,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    borderRadius: 5,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  dateText: {
-    fontSize: 16,
-    color: '#333',
-  },
-  calendarIcon: {
-    marginLeft: 10,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
   },
 });

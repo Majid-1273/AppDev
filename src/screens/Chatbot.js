@@ -31,6 +31,9 @@ const Chatbot = () => {
   const scrollViewRef = useRef();
 
   // Replace with your Claude API key
+
+  // console.log('API Key loaded:', CLAUDE_API_KEY ? 'Yes' : 'No');
+  // console.log('API Key length:', CLAUDE_API_KEY?.length);
   const CLAUDE_API_URL = 'https://api.anthropic.com/v1/messages';
 
   useEffect(() => {
@@ -45,7 +48,7 @@ const generateBotResponse = async (userMessage) => {
     
     // Check if API key is available
     if (!CLAUDE_API_KEY) {
-      console.warn('No API key found, using fallback response');
+      // console.warn('No API key found, using fallback response');
       return getLocalResponse(userMessage);
     }
     
