@@ -322,6 +322,7 @@ const styles = StyleSheet.create({
    batchesContainer: {
     flex: 1,
     padding: 16,
+    paddingTop:30,
     backgroundColor: '#f5f5f5',
   },
   screenTitle: {

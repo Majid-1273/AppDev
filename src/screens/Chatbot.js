@@ -31,7 +31,6 @@ const Chatbot = () => {
   const scrollViewRef = useRef();
 
   // Replace with your Claude API key
-
   const CLAUDE_API_URL = 'https://api.anthropic.com/v1/messages';
 
   useEffect(() => {
@@ -309,6 +308,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
+    paddingTop:40
   },
   
   screenTitle: {
