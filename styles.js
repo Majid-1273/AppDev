@@ -347,11 +347,13 @@ const styles = StyleSheet.create({
   searchIcon: {
     marginRight: 10,
   },
-  searchInput: {
-    flex: 1,
-    height: 24,
-    fontSize: 16,
-  },
+searchInput: {
+  flex: 1,
+  height: 40, // Increased height
+  fontSize: 16,
+  paddingHorizontal: 8, // Optional for better spacing
+  paddingVertical: 8,   // Optional to ensure text is centered
+},
   filterContainer: {
     flexDirection: 'row',
     marginBottom: 16,
