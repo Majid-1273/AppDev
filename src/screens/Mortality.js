@@ -42,7 +42,6 @@ const Mortality = ({ route, navigation }) => {
   const [remaining, setRemaining] = useState('');
   const [currentBatchCount, setCurrentBatchCount] = useState(0);
   const [editingLog, setEditingLog] = useState(null);
-  const [showMenuId, setShowMenuId] = useState(null);
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -252,7 +251,6 @@ const Mortality = ({ route, navigation }) => {
     setRemaining(log.remaining.toString());
     setSelectedDate(log.date);
     setEditModalVisible(true);
-    setShowMenuId(null); // Close menu when editing
   };
 
   const saveEditedLog = async () => {
@@ -321,16 +319,18 @@ const Mortality = ({ route, navigation }) => {
   const renderMortalityLog = ({ item }) => (
     <View style={styles.recordItem}>
       <View style={styles.recordHeader}>
-        <Text style={styles.recordDate}>
-          {item.date.toISOString().split('T')[0]}
-        </Text>
-        <TouchableOpacity
-          onPress={() => setShowMenuId(showMenuId === item.id ? null : item.id)}
-          style={styles.menuButton}
-        >
-          <MaterialIcons name="more-vert" size={24} color="#5c6bc0" />
-        </TouchableOpacity>
-      </View>
+  <Text style={styles.recordDate}>
+    {item.date.toISOString().split('T')[0]}
+  </Text>
+  <View style={styles.recordActions}>
+    <TouchableOpacity style={styles.editButton} onPress={() => handleEditMortality(item)}>
+      <Text style={styles.editButtonText}>Edit</Text>
+    </TouchableOpacity>
+    <TouchableOpacity style={styles.deleteButton} onPress={() => handleDeleteMortality(item.id)}>
+      <Text style={styles.deleteButtonText}>Delete</Text>
+    </TouchableOpacity>
+  </View>
+</View>
 
       <View style={styles.recordDetails}>
         <View style={styles.detailRow}>
@@ -347,22 +347,7 @@ const Mortality = ({ route, navigation }) => {
         </View>
       </View>
 
-      {showMenuId === item.id && (
-        <View style={styles.popupMenu}>
-          <TouchableOpacity 
-            onPress={() => handleEditMortality(item)}
-            style={styles.editButton}
-          >
-            <Text style={styles.editButtonText}>Edit</Text>
-          </TouchableOpacity>
-          <TouchableOpacity 
-            onPress={() => handleDeleteMortality(item.id)}
-            style={styles.deleteButton}
-          >
-            <Text style={styles.deleteButtonText}>Delete</Text>
-          </TouchableOpacity>
-        </View>
-      )}
+
     </View>
   );
 
@@ -381,7 +366,6 @@ const Mortality = ({ route, navigation }) => {
         <Text style={styles.title}>
           {editingLog ? 'Edit Mortality Log' : 'Add Mortality Log'}
         </Text>
-        <Text style={styles.subtitle}>Current Batch Count: {currentBatchCount}</Text>
 
         <Text style={styles.label}>Mortality Date *</Text>
         <TouchableOpacity
@@ -564,6 +548,10 @@ const styles = StyleSheet.create({
     backgroundColor: 'white',
     marginBottom: 10,
   },
+  recordActions: {
+  flexDirection: 'row',
+  gap: 8,
+},
   title: {
     fontSize: 24,
     fontWeight: 'bold',
@@ -669,23 +657,21 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
     marginTop: 20,
   },
-  recordItem: {
-    backgroundColor: '#f8f9fa',
-    borderRadius: 8,
-    padding: 15,
-    marginBottom: 12,
-    borderLeftWidth: 4,
-    borderLeftColor: '#5c6bc0',
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 1,
-    },
-    shadowOpacity: 0.22,
-    shadowRadius: 2.22,
-    position: 'relative',
+recordItem: {
+  backgroundColor: '#f8f9fa',
+  borderRadius: 8,
+  padding: 15,
+  marginBottom: 12,
+  elevation: 2,
+  shadowColor: '#000',
+  shadowOffset: {
+    width: 0,
+    height: 1,
   },
+  shadowOpacity: 0.22,
+  shadowRadius: 2.22,
+  position: 'relative',
+},
   recordHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -696,9 +682,6 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     color: '#5c6bc0',
-  },
-  menuButton: {
-    padding: 5,
   },
   recordDetails: {
     gap: 8,
@@ -721,44 +704,28 @@ const styles = StyleSheet.create({
     flex: 2,
     textAlign: 'right',
   },
-  popupMenu: {
-    position: 'absolute',
-    top: 40,
-    right: 10,
-    backgroundColor: 'white',
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 5,
-    zIndex: 1,
-    elevation: 5,
-    padding: 5,
-    minWidth: 100,
-  },
-  editButton: {
-    backgroundColor: '#28a745',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 4,
-    marginBottom: 5,
-  },
-  editButtonText: {
-    color: 'white',
-    fontSize: 14,
-    fontWeight: '600',
-    textAlign: 'center',
-  },
-  deleteButton: {
-    backgroundColor: '#dc3545',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 4,
-  },
-  deleteButtonText: {
-    color: 'white',
-    fontSize: 14,
-    fontWeight: '600',
-    textAlign: 'center',
-  },
+editButton: {
+  backgroundColor: '#28a745',
+  paddingHorizontal: 12,
+  paddingVertical: 6,
+  borderRadius: 4,
+},
+editButtonText: {
+  color: 'white',
+  fontSize: 12,
+  fontWeight: '600',
+},
+deleteButton: {
+  backgroundColor: '#dc3545',
+  paddingHorizontal: 12,
+  paddingVertical: 6,
+  borderRadius: 4,
+},
+deleteButtonText: {
+  color: 'white',
+  fontSize: 12,
+  fontWeight: '600',
+},
   modalContainer: {
     flex: 1,
     justifyContent: 'center',

@@ -527,7 +527,6 @@ const styles = StyleSheet.create({
   detailValue: {
     fontSize: 14,
     color: '#333',
-    fontWeight: 'bold',
   },
   emptyText: {
     textAlign: 'center',
