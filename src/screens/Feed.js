@@ -39,7 +39,6 @@ export default function Feed({ route }) {
   const [grams, setGrams] = useState('');
   const [price, setPrice] = useState('');
   const [editingLog, setEditingLog] = useState(null);
-  const [showMenuId, setShowMenuId] = useState(null);
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -227,38 +226,39 @@ export default function Feed({ route }) {
     }
   };
 
-  const renderFeedLog = ({ item }) => (
-    <View style={styles.feedLogItem}>
-      <View style={{ flex: 1 }}>
-        <Text style={styles.feedLogText}>Type: {item.feedType}</Text>
-        <Text style={styles.feedLogText}>Date: {item.date.toISOString().split('T')[0]}</Text>
-        <Text style={styles.feedLogText}>Grams: {item.grams}</Text>
-        <Text style={styles.feedLogText}>Price: ${item.price}</Text>
-      </View>
+  const formatDate = (date) => {
+    return date.toISOString().split('T')[0];
+  };
 
-      <TouchableOpacity
-        onPress={() => setShowMenuId(showMenuId === item.id ? null : item.id)}
-        style={styles.menuButton}
-      >
-        <MaterialIcons name="more-vert" size={24} color="#5c6bc0" />
-      </TouchableOpacity>
-
-      {showMenuId === item.id && (
-        <View style={styles.popupMenu}>
-          <TouchableOpacity 
-            onPress={() => handleEditFeedLog(item)}
-            style={styles.editButton}
-          >
+  const renderFeedLogItem = ({ item }) => (
+    <View style={styles.recordItem}>
+      <View style={styles.recordHeader}>
+        <Text style={styles.recordDate}>
+          {formatDate(item.date)}
+        </Text>
+        <View style={styles.recordActions}>
+          <TouchableOpacity style={styles.editButton} onPress={() => handleEditFeedLog(item)}>
             <Text style={styles.editButtonText}>Edit</Text>
           </TouchableOpacity>
-          <TouchableOpacity 
-            onPress={() => handleDeleteFeedLog(item.id)}
-            style={styles.deleteButton}
-          >
+          <TouchableOpacity style={styles.deleteButton} onPress={() => handleDeleteFeedLog(item.id)}>
             <Text style={styles.deleteButtonText}>Delete</Text>
           </TouchableOpacity>
         </View>
-      )}
+      </View>
+      <View style={styles.recordDetails}>
+        <View style={styles.detailRow}>
+          <Text style={styles.detailLabel}>Feed Type:</Text>
+          <Text style={styles.detailValue}>{item.feedType}</Text>
+        </View>
+        <View style={styles.detailRow}>
+          <Text style={styles.detailLabel}>Grams:</Text>
+          <Text style={styles.detailValue}>{item.grams}</Text>
+        </View>
+        <View style={styles.detailRow}>
+          <Text style={styles.detailLabel}>Price:</Text>
+          <Text style={styles.detailValue}>${item.price}</Text>
+        </View>
+      </View>
     </View>
   );
 
@@ -331,12 +331,15 @@ export default function Feed({ route }) {
 
       <View style={styles.recordsContainer}>
         <Text style={styles.recordsTitle}>Feed Logs</Text>
-        <FlatList 
-          data={feedLogs} 
-          keyExtractor={(item) => item.id} 
-          renderItem={renderFeedLog} 
-          ListEmptyComponent={<Text style={styles.emptyText}>No feed logs yet.</Text>} 
-        />
+        {feedLogs.length === 0 ? (
+          <Text style={styles.emptyText}>No feed logs found</Text>
+        ) : (
+          feedLogs.map(item => (
+            <View key={item.id}>
+              {renderFeedLogItem({ item })}
+            </View>
+          ))
+        )}
       </View>
 
       <Modal visible={editModalVisible} animationType="slide" transparent={true}>
@@ -481,8 +484,6 @@ const styles = StyleSheet.create({
   recordsContainer: {
     padding: 20,
     paddingTop: 10,
-    backgroundColor: 'white',
-    marginTop: 10,
   },
   recordsTitle: {
     fontSize: 20,
@@ -493,80 +494,79 @@ const styles = StyleSheet.create({
   emptyText: {
     textAlign: 'center',
     color: '#666',
-    fontSize: 16,
     fontStyle: 'italic',
     marginTop: 20,
   },
-  feedLogItem: {
-    backgroundColor: '#f8f9fa',
+  recordItem: {
+    backgroundColor: '#fff',
     borderRadius: 8,
-    padding: 15,
+    padding: 16,
     marginBottom: 12,
-    borderLeftWidth: 4,
-    borderLeftColor: '#5c6bc0',
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 1,
-    },
-    shadowOpacity: 0.22,
-    shadowRadius: 2.22,
-    flexDirection: 'row',
-    alignItems: 'center',
-    position: 'relative',
-  },
-  feedLogText: {
-    fontSize: 16,
-    color: '#333',
-    marginBottom: 4,
-  },
-  menuButton: {
-    padding: 5,
-  },
-  popupMenu: {
-    position: 'absolute',
-    top: 40,
-    right: 10,
-    backgroundColor: 'white',
     borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
-    zIndex: 1,
-    elevation: 5,
+    borderColor: '#e0e0e0',
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
       height: 2,
     },
-    shadowOpacity: 0.25,
+    shadowOpacity: 0.1,
     shadowRadius: 3.84,
+    elevation: 5,
+  },
+  recordHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  recordDate: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#5c6bc0',
+  },
+  recordActions: {
+    flexDirection: 'row',
+    gap: 8,
   },
   editButton: {
     backgroundColor: '#28a745',
-    paddingHorizontal: 15,
-    paddingVertical: 10,
-    borderTopLeftRadius: 8,
-    borderTopRightRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 4,
   },
   editButtonText: {
     color: 'white',
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: '600',
-    textAlign: 'center',
   },
   deleteButton: {
     backgroundColor: '#dc3545',
-    paddingHorizontal: 15,
-    paddingVertical: 10,
-    borderBottomLeftRadius: 8,
-    borderBottomRightRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 4,
   },
   deleteButtonText: {
     color: 'white',
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: '600',
-    textAlign: 'center',
+  },
+  recordDetails: {
+    gap: 8,
+  },
+  detailRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  detailLabel: {
+    fontSize: 14,
+    color: '#666',
+    fontWeight: '500',
+  },
+  detailValue: {
+    fontSize: 14,
+    color: '#333',
+ 
   },
   modalContainer: {
     flex: 1,

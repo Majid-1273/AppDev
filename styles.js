@@ -5,6 +5,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 16,
+    paddingTop:30,
     backgroundColor: '#f5f5f5',
   },
   screenTitle: {
@@ -667,8 +668,47 @@ searchInput: {
     fontWeight: '600',
     fontSize: 14,
   },
-  
-  
+  mapContainer: {
+  height: 300, // Adjust height as needed
+  margin: 10,
+  borderRadius: 10,
+  overflow: 'hidden',
+},
+map: {
+  flex: 1,
+},
+searchInput: {
+  flex: 1,
+  padding: 10,
+  borderWidth: 1,
+  borderColor: '#ddd',
+  borderRadius: 8,
+  backgroundColor: '#fff',
+},
+
+callButton: {
+  backgroundColor: '#4CAF50',
+},
+vetType: {
+  fontSize: 12,
+  color: '#666',
+  fontStyle: 'italic',
+},
+noResults: {
+  padding: 20,
+  alignItems: 'center',
+},
+retryButton: {
+  backgroundColor: '#2196F3',
+  padding: 10,
+  borderRadius: 5,
+  marginTop: 10,
+},
+retryButtonText: {
+  color: 'white',
+  fontWeight: 'bold',
+},
+
 });
 
 export default styles;

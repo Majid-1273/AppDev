@@ -510,8 +510,6 @@ const styles = StyleSheet.create({
  recordsContainer: {
    padding: 20,
    paddingTop: 10,
-   backgroundColor: 'white',
-   marginTop: 10,
  },
  recordsTitle: {
    fontSize: 20,
@@ -531,8 +529,6 @@ const styles = StyleSheet.create({
    borderRadius: 8,
    padding: 15,
    marginBottom: 12,
-   borderLeftWidth: 4,
-   borderLeftColor: '#5c6bc0',
    elevation: 2,
    shadowColor: '#000',
    shadowOffset: {
